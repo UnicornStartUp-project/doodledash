@@ -1,0 +1,6 @@
+{
+  "name": "@doodledash/client",
+  "version": "1.0.0",
+  "private": true,
+  "main": "public/index.html"
+}

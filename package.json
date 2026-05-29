@@ -1,0 +1,15 @@
+{
+  "name": "doodledash",
+  "version": "1.0.0",
+  "private": true,
+  "description": "🎨 DoodleDash — Turn-based multiplayer party game for kids",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "start": "node packages/server/src/index.js",
+    "dev": "node --watch packages/server/src/index.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "uuid": "^10.0.0"
+  }
+}

@@ -1,0 +1,26 @@
+name: Deploy to Prod
+
+on:
+  push:
+    branches: [prod]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - name: Deploy
+        run: |
+          echo "🚀 Deploy triggered for DoodleDash"
+          echo "Branch: prod"
+          echo "Commit: ${{ github.sha }}"
+          echo ""
+          echo "To deploy, add your hosting provider below:"
+          echo "  Railway: npx railway up"
+          echo "  Fly.io:  npx flyctl deploy"
+          echo "  Render:  trigger deploy hook"
+          echo "  Self-host: rsync to your server"

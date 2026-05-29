@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#FFB3C6">
+  <title>🎨 DoodleDash</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Screens injected dynamically -->
+    <div id="screen-lobby" class="screen hidden"></div>
+    <div id="screen-dash-master" class="screen hidden"></div>
+    <div id="screen-create" class="screen hidden"></div>
+    <div id="screen-reveal" class="screen hidden"></div>
+    <div id="screen-results" class="screen hidden"></div>
+    <div id="screen-connecting" class="screen">
+      <div class="connect-spinner">
+        <div class="spinner">🎨</div>
+        <p>Connecting...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inline toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Chat bar (floating, always available in-game) -->
+  <div id="chat-bar" class="chat-bar hidden">
+    <div id="chat-messages" class="chat-messages"></div>
+    <div class="chat-emoji-bar">
+      <button class="emoji-btn" data-emoji="😂">😂</button>
+      <button class="emoji-btn" data-emoji="🔥">🔥</button>
+      <button class="emoji-btn" data-emoji="👏">👏</button>
+      <button class="emoji-btn" data-emoji="💀">💀</button>
+      <button class="emoji-btn" data-emoji="❤️">❤️</button>
+      <button class="emoji-btn" data-emoji="🎨">🎨</button>
+      <button class="emoji-btn" data-emoji="⭐">⭐</button>
+      <button class="emoji-btn" data-emoji="👑">👑</button>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Say something..." maxlength="200" autocomplete="off">
+      <button id="chat-send">Send</button>
+    </div>
+  </div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

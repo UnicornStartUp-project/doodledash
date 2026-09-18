@@ -104,9 +104,11 @@ function renderDecorate() {
       <div class="rd-shop-grid" id="rd-shop-grid"></div>
 
       <div class="rd-actions">
+        <button id="btn-cancel-round" class="btn btn-secondary">↩️ Back</button>
         <button id="btn-reset-room" class="btn btn-secondary">🗑️ Clear Room</button>
-        <button id="btn-finish" class="btn btn-primary">✅ Finish Decorating</button>
+        <button id="btn-finish" class="btn btn-primary">✅ Finish</button>
       </div>
+      <p style="font-size:12px;color:var(--text-light);text-align:center">Changed your mind? Tap ✕ on a tray item to sell it back for a full refund, or ↩️ Back to leave with all your coins returned.</p>
     </div>
   `;
 
@@ -127,6 +129,8 @@ function renderDecorate() {
   });
 
   document.getElementById('btn-finish').addEventListener('click', finishRound);
+
+  document.getElementById('btn-cancel-round').addEventListener('click', cancelRound);
 
   document.getElementById('rd-room').addEventListener('pointerdown', (e) => {
     if (e.target.id === 'rd-room') {
@@ -201,12 +205,51 @@ function renderTray() {
   }
   el.innerHTML = round.owned.map(o => {
     const item = getItem(o.itemId);
-    return `<div class="rd-tray-item" data-instance="${o.instanceId}" title="${item.name}">${item.emoji}</div>`;
+    return `
+      <div class="rd-tray-item" data-instance="${o.instanceId}" title="${item.name}">
+        ${item.emoji}
+        <button class="rd-tray-sell" data-instance="${o.instanceId}" title="Sell back for 🪙${item.price}">✕</button>
+      </div>`;
   }).join('');
 
   el.querySelectorAll('.rd-tray-item').forEach(node => {
-    node.addEventListener('pointerdown', (e) => startTrayDrag(e, node.dataset.instance));
+    node.addEventListener('pointerdown', (e) => {
+      if (e.target.classList.contains('rd-tray-sell')) return;
+      startTrayDrag(e, node.dataset.instance);
+    });
   });
+
+  el.querySelectorAll('.rd-tray-sell').forEach(btn => {
+    btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sellItem(btn.dataset.instance);
+    });
+  });
+}
+
+function sellItem(instanceId) {
+  const idx = round.owned.findIndex(o => o.instanceId === instanceId);
+  if (idx === -1) return;
+  const [o] = round.owned.splice(idx, 1);
+  const item = getItem(o.itemId);
+  saveData.coins += item.price;
+  saveState(saveData);
+  showToast(`Sold ${item.name} back for 🪙${item.price}`);
+
+  document.getElementById('rd-coin-count').textContent = saveData.coins;
+  renderShopGrid();
+  renderTray();
+}
+
+function cancelRound() {
+  const refund = [...round.owned, ...round.placed]
+    .reduce((sum, o) => sum + (getItem(o.itemId)?.price || 0), 0);
+  saveData.coins += refund;
+  saveState(saveData);
+  if (refund > 0) showToast(`Refunded 🪙${refund} — no coins lost!`);
+  round = null;
+  showThemes();
 }
 
 // ─── Room rendering ───────────────────────────
@@ -349,20 +392,22 @@ function finishRound() {
   const avgRatio = breakdown.reduce((sum, b) => sum + b.ratio, 0) / breakdown.length;
   const stars = Math.max(0, Math.min(5, Math.round(avgRatio * 5)));
   const bonus = STAR_BONUS[stars] || 0;
+  const refund = round.owned.reduce((sum, o) => sum + (getItem(o.itemId)?.price || 0), 0);
 
-  saveData.coins += bonus;
+  saveData.coins += bonus + refund;
   recordRound(saveData, theme.id, stars, bonus);
 
-  showScore(theme, breakdown, stars, bonus);
+  showScore(theme, breakdown, stars, bonus, refund);
 }
 
-function showScore(theme, breakdown, stars, bonus) {
+function showScore(theme, breakdown, stars, bonus, refund) {
   const el = screens.score;
   el.innerHTML = `
     <div class="card" style="max-width:500px">
       <div class="card-title">${theme.emoji} ${theme.name} — Results</div>
       <div class="rd-score-stars">${'⭐'.repeat(stars)}${'☆'.repeat(5 - stars)}</div>
       <div class="rd-score-bonus">+${bonus} 🪙 bonus coins earned!</div>
+      ${refund > 0 ? `<p style="text-align:center;font-size:13px;color:var(--text-light);margin-bottom:8px">+${refund} 🪙 refunded for unused items</p>` : ''}
       <div class="rd-score-checklist">
         ${breakdown.map(b => `
           <div class="rd-score-row ${b.met ? 'met' : ''}">

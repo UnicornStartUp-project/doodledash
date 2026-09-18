@@ -25,7 +25,8 @@ const MIME_TYPES = {
 };
 
 function serveStatic(req, res) {
-  let filePath = path.join(PUBLIC_DIR, req.url === '/' ? 'index.html' : req.url);
+  const urlPath = req.url.split('?')[0];
+  let filePath = path.join(PUBLIC_DIR, urlPath === '/' || urlPath.endsWith('/') ? `${urlPath}index.html` : urlPath);
 
   // Security: prevent directory traversal
   if (!filePath.startsWith(PUBLIC_DIR)) {
@@ -51,7 +52,7 @@ function serveStatic(req, res) {
 
     const ext = path.extname(filePath);
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': contentType });
+    res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-cache' });
     res.end(data);
   });
 }

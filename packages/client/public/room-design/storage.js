@@ -1,13 +1,15 @@
 // Room Design — Local save data (localStorage, no login needed)
 
+import { STARTING_COINS } from './data.js';
+
 const KEY = 'doodledash_room_design_v1';
-const STARTING_COINS = 100;
 
 function defaultState() {
   return {
     coins: STARTING_COINS,
     history: [], // { themeId, stars, coinsEarned, date }
     bestStars: {}, // themeId -> best star rating achieved
+    lastAllowanceDay: null, // 'YYYY-MM-DD' of the last daily allowance
   };
 }
 

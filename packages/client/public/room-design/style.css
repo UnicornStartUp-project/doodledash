@@ -107,22 +107,52 @@
   border: 2px solid #f0e0e8;
 }
 
-.rd-wall {
-  position: absolute;
-  left: 0; right: 0; top: 0;
-  height: 40%;
+.rd-room {
+  background: linear-gradient(#fbf3ff, #f3e8ff);
 }
 
-.rd-floor {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 60%;
-  box-shadow: inset 0 4px 6px rgba(0,0,0,0.12);
+.rd-room canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
 }
 
-.rd-items {
+.rd-view-rotate {
   position: absolute;
-  inset: 0;
+  top: 8px;
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.rd-room-info {
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-light);
+  background: rgba(255,255,255,0.8);
+  padding: 3px 8px;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.rd-ghost {
+  position: fixed;
+  font-size: 40px;
+  pointer-events: none;
+  z-index: 999;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
 }
 
 /* ─── Wall / floor pickers ─────────────── */
@@ -167,34 +197,21 @@
   transform: scale(1.1);
 }
 
-.rd-placed-item {
-  position: absolute;
-  font-size: 40px;
-  line-height: 1;
-  cursor: grab;
-  transform: translate(-50%, -50%);
-  filter: drop-shadow(0 3px 4px rgba(0,0,0,0.2));
-  touch-action: none;
-  user-select: none;
-}
-
-.rd-placed-item.selected {
-  outline: 3px dashed var(--pink);
-  outline-offset: 6px;
-  border-radius: 50%;
-}
-
 .rd-item-toolbar {
   position: absolute;
   display: flex;
-  gap: 4px;
-  transform: translate(-50%, calc(-100% - 34px));
+  gap: 6px;
+  transform: translate(-50%, calc(-100% - 12px));
   z-index: 20;
 }
 
+.rd-item-toolbar.hidden {
+  display: none;
+}
+
 .rd-item-toolbar button {
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: none;
   background: white;
@@ -309,6 +326,7 @@
 
 .rd-shop-item-emoji { font-size: 28px; display: block; }
 .rd-shop-item-name { font-size: 11px; font-weight: 700; margin-top: 2px; }
+.rd-shop-item-size { font-size: 10px; color: var(--text-light); margin-top: 1px; }
 .rd-shop-item-price { font-size: 12px; font-weight: 800; color: var(--pink-dark); margin-top: 2px; }
 
 .rd-actions {

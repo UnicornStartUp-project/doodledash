@@ -1,15 +1,16 @@
 // Room Design — Catalog & Themes
-// Single source of truth for shop items and theme objectives
+// Single source of truth for shop items and theme objectives.
+// All sizes are real-world centimetres: size = [width, depth, height].
 
 export const CATEGORIES = {
-  seating: { label: 'Seating', emoji: '🪑' },
-  storage: { label: 'Storage', emoji: '🗄️' },
-  lighting: { label: 'Lighting', emoji: '💡' },
-  plant: { label: 'Plants', emoji: '🪴' },
-  wallArt: { label: 'Wall Art', emoji: '🖼️' },
-  tech: { label: 'Tech', emoji: '📺' },
-  rug: { label: 'Rugs', emoji: '🟫' },
-  toy: { label: 'Toys', emoji: '🧸' },
+  seating: { label: 'Seating', emoji: '🪑', color: '#f6a5b8' },
+  storage: { label: 'Storage', emoji: '🗄️', color: '#c9a27e' },
+  lighting: { label: 'Lighting', emoji: '💡', color: '#fde68a' },
+  plant: { label: 'Plants', emoji: '🪴', color: '#86d3a2' },
+  wallArt: { label: 'Wall Art', emoji: '🖼️', color: '#b4a4f0' },
+  tech: { label: 'Tech', emoji: '📺', color: '#8fa3c8' },
+  rug: { label: 'Rugs', emoji: '🟫', color: '#d9b8e0' },
+  toy: { label: 'Toys', emoji: '🧸', color: '#9ad0f5' },
 };
 
 export const TIERS = {
@@ -18,58 +19,59 @@ export const TIERS = {
   deluxe: { label: 'Deluxe', color: '#FBBF24' },
 };
 
+// wall: true → must hang on a back wall, at `elev` cm above the floor
 export const ITEMS = [
   // Seating
-  { id: 'sofa', name: 'Sofa', emoji: '🛋️', category: 'seating', tier: 'nice', price: 28, tags: ['modern', 'cozy'] },
-  { id: 'armchair', name: 'Armchair', emoji: '🪑', category: 'seating', tier: 'basic', price: 14, tags: ['cozy', 'cabin', 'garden'] },
-  { id: 'beanbag', name: 'Bean Bag', emoji: '💺', category: 'seating', tier: 'basic', price: 12, tags: ['playroom', 'modern'] },
-  { id: 'bed', name: 'Bed', emoji: '🛏️', category: 'seating', tier: 'deluxe', price: 40, tags: ['cozy', 'cabin'] },
+  { id: 'sofa', name: 'Sofa', emoji: '🛋️', category: 'seating', tier: 'nice', price: 280, size: [200, 90, 85], tags: ['modern', 'cozy'] },
+  { id: 'armchair', name: 'Armchair', emoji: '🪑', category: 'seating', tier: 'basic', price: 140, size: [85, 85, 90], tags: ['cozy', 'cabin', 'garden'] },
+  { id: 'beanbag', name: 'Bean Bag', emoji: '💺', category: 'seating', tier: 'basic', price: 120, size: [80, 80, 60], tags: ['playroom', 'modern'] },
+  { id: 'bed', name: 'Bed', emoji: '🛏️', category: 'seating', tier: 'deluxe', price: 400, size: [160, 200, 55], tags: ['cozy', 'cabin'] },
+  { id: 'fireplace', name: 'Fireplace', emoji: '🔥', category: 'seating', tier: 'deluxe', price: 380, size: [120, 50, 110], tags: ['cabin', 'cozy'] },
 
   // Storage
-  { id: 'bookshelf', name: 'Bookshelf', emoji: '📚', category: 'storage', tier: 'basic', price: 16, tags: ['modern', 'cabin'] },
-  { id: 'cabinet', name: 'Cabinet', emoji: '🗄️', category: 'storage', tier: 'nice', price: 22, tags: ['modern'] },
-  { id: 'basket', name: 'Toy Basket', emoji: '🧺', category: 'storage', tier: 'basic', price: 10, tags: ['playroom'] },
+  { id: 'bookshelf', name: 'Bookshelf', emoji: '📚', category: 'storage', tier: 'basic', price: 160, size: [80, 30, 200], tags: ['modern', 'cabin'] },
+  { id: 'cabinet', name: 'Cabinet', emoji: '🗄️', category: 'storage', tier: 'nice', price: 220, size: [100, 45, 90], tags: ['modern'] },
+  { id: 'basket', name: 'Toy Basket', emoji: '🧺', category: 'storage', tier: 'basic', price: 100, size: [50, 50, 45], tags: ['playroom'] },
 
   // Lighting
-  { id: 'lamp', name: 'Floor Lamp', emoji: '💡', category: 'lighting', tier: 'basic', price: 12, tags: ['modern', 'cozy'] },
-  { id: 'candle', name: 'Candle', emoji: '🕯️', category: 'lighting', tier: 'basic', price: 6, tags: ['cozy', 'cabin', 'garden'] },
-  { id: 'lantern', name: 'Lantern', emoji: '🪔', category: 'lighting', tier: 'nice', price: 18, tags: ['cabin', 'beach'] },
+  { id: 'lamp', name: 'Floor Lamp', emoji: '💡', category: 'lighting', tier: 'basic', price: 120, size: [30, 30, 160], tags: ['modern', 'cozy'] },
+  { id: 'candle', name: 'Candle', emoji: '🕯️', category: 'lighting', tier: 'basic', price: 60, size: [25, 25, 30], tags: ['cozy', 'cabin', 'garden'] },
+  { id: 'lantern', name: 'Lantern', emoji: '🪔', category: 'lighting', tier: 'nice', price: 180, size: [30, 30, 45], tags: ['cabin', 'beach'] },
 
   // Plants
-  { id: 'potted-plant', name: 'Potted Plant', emoji: '🪴', category: 'plant', tier: 'basic', price: 10, tags: ['garden', 'modern', 'beach'] },
-  { id: 'cactus', name: 'Cactus', emoji: '🌵', category: 'plant', tier: 'basic', price: 8, tags: ['modern', 'beach'] },
-  { id: 'palm', name: 'Palm Tree', emoji: '🌴', category: 'plant', tier: 'deluxe', price: 32, tags: ['beach', 'garden'] },
-  { id: 'flowers', name: 'Flowers', emoji: '🌸', category: 'plant', tier: 'basic', price: 7, tags: ['garden', 'cozy'] },
+  { id: 'potted-plant', name: 'Potted Plant', emoji: '🪴', category: 'plant', tier: 'basic', price: 100, size: [40, 40, 90], tags: ['garden', 'modern', 'beach'] },
+  { id: 'cactus', name: 'Cactus', emoji: '🌵', category: 'plant', tier: 'basic', price: 80, size: [30, 30, 60], tags: ['modern', 'beach'] },
+  { id: 'palm', name: 'Palm Tree', emoji: '🌴', category: 'plant', tier: 'deluxe', price: 320, size: [80, 80, 220], tags: ['beach', 'garden'] },
+  { id: 'flowers', name: 'Flowers', emoji: '🌸', category: 'plant', tier: 'basic', price: 70, size: [30, 30, 45], tags: ['garden', 'cozy'] },
 
-  // Wall Art / Decor
-  { id: 'art', name: 'Framed Art', emoji: '🖼️', category: 'wallArt', tier: 'nice', price: 20, tags: ['modern', 'cozy'] },
-  { id: 'mirror', name: 'Mirror', emoji: '🪞', category: 'wallArt', tier: 'nice', price: 18, tags: ['modern'] },
-  { id: 'banner', name: 'Beach Banner', emoji: '🎏', category: 'wallArt', tier: 'basic', price: 9, tags: ['beach', 'playroom'] },
+  // Wall Art (hangs on a wall)
+  { id: 'art', name: 'Framed Art', emoji: '🖼️', category: 'wallArt', tier: 'nice', price: 200, size: [70, 5, 50], wall: true, elev: 140, tags: ['modern', 'cozy'] },
+  { id: 'mirror', name: 'Mirror', emoji: '🪞', category: 'wallArt', tier: 'nice', price: 180, size: [50, 5, 120], wall: true, elev: 60, tags: ['modern'] },
+  { id: 'banner', name: 'Beach Banner', emoji: '🎏', category: 'wallArt', tier: 'basic', price: 90, size: [120, 5, 30], wall: true, elev: 190, tags: ['beach', 'playroom'] },
 
   // Tech
-  { id: 'tv', name: 'TV', emoji: '📺', category: 'tech', tier: 'deluxe', price: 35, tags: ['modern'] },
+  { id: 'tv', name: 'TV', emoji: '📺', category: 'tech', tier: 'deluxe', price: 350, size: [120, 30, 75], tags: ['modern'] },
 
-  // Rugs
-  { id: 'shag-rug', name: 'Shag Rug', emoji: '🟫', category: 'rug', tier: 'basic', price: 10, tags: ['cozy', 'cabin'] },
-  { id: 'beach-mat', name: 'Beach Mat', emoji: '🟨', category: 'rug', tier: 'basic', price: 8, tags: ['beach'] },
-  { id: 'round-rug', name: 'Round Rug', emoji: '🟪', category: 'rug', tier: 'nice', price: 15, tags: ['modern'] },
+  // Rugs (flat)
+  { id: 'shag-rug', name: 'Shag Rug', emoji: '🟫', category: 'rug', tier: 'basic', price: 100, size: [160, 120, 3], tags: ['cozy', 'cabin'] },
+  { id: 'beach-mat', name: 'Beach Mat', emoji: '🟨', category: 'rug', tier: 'basic', price: 80, size: [180, 90, 2], tags: ['beach'] },
+  { id: 'round-rug', name: 'Round Rug', emoji: '🟪', category: 'rug', tier: 'nice', price: 150, size: [140, 140, 3], tags: ['modern'] },
 
   // Toys
-  { id: 'teddy', name: 'Teddy Bear', emoji: '🧸', category: 'toy', tier: 'basic', price: 9, tags: ['playroom', 'cozy'] },
-  { id: 'train', name: 'Toy Train', emoji: '🚂', category: 'toy', tier: 'nice', price: 17, tags: ['playroom'] },
-  { id: 'puzzle', name: 'Puzzle', emoji: '🧩', category: 'toy', tier: 'basic', price: 6, tags: ['playroom'] },
-  { id: 'kite', name: 'Kite', emoji: '🪁', category: 'toy', tier: 'basic', price: 9, tags: ['playroom', 'beach'] },
-
-  // Extra
-  { id: 'fireplace', name: 'Fireplace', emoji: '🔥', category: 'seating', tier: 'deluxe', price: 38, tags: ['cabin', 'cozy'] },
+  { id: 'teddy', name: 'Teddy Bear', emoji: '🧸', category: 'toy', tier: 'basic', price: 90, size: [35, 30, 50], tags: ['playroom', 'cozy'] },
+  { id: 'train', name: 'Toy Train', emoji: '🚂', category: 'toy', tier: 'nice', price: 170, size: [90, 60, 20], tags: ['playroom'] },
+  { id: 'puzzle', name: 'Puzzle', emoji: '🧩', category: 'toy', tier: 'basic', price: 60, size: [50, 40, 3], tags: ['playroom'] },
+  { id: 'kite', name: 'Kite', emoji: '🪁', category: 'toy', tier: 'basic', price: 90, size: [60, 10, 80], tags: ['playroom', 'beach'] },
 ];
 
+// room = real size in cm: [width, depth, wall height]
 export const THEMES = [
   {
     id: 'beach',
     name: 'Beach Bungalow',
     emoji: '🏖️',
     description: 'Breezy, sunny, straight off the sand.',
+    room: [450, 400, 260],
     objectives: [
       { type: 'tag', value: 'beach', count: 3, label: 'Place 3 beach-themed items' },
       { type: 'category', value: 'plant', count: 1, label: 'Add 1 plant' },
@@ -82,6 +84,7 @@ export const THEMES = [
     name: 'Cozy Cabin',
     emoji: '🏔️',
     description: 'Warm, woodsy, and snowed-in comfy.',
+    room: [400, 350, 240],
     objectives: [
       { type: 'tag', value: 'cabin', count: 3, label: 'Place 3 cabin-themed items' },
       { type: 'category', value: 'seating', count: 1, label: 'Add 1 seating item' },
@@ -94,6 +97,7 @@ export const THEMES = [
     name: 'Modern Loft',
     emoji: '🏙️',
     description: 'Sleek, minimal, big-city energy.',
+    room: [550, 450, 300],
     objectives: [
       { type: 'tag', value: 'modern', count: 3, label: 'Place 3 modern-styled items' },
       { type: 'category', value: 'tech', count: 1, label: 'Add 1 tech item' },
@@ -106,6 +110,7 @@ export const THEMES = [
     name: 'Kids Playroom',
     emoji: '🧸',
     description: 'Bright, fun, built for playtime.',
+    room: [350, 300, 250],
     objectives: [
       { type: 'tag', value: 'playroom', count: 3, label: 'Place 3 playroom-themed items' },
       { type: 'category', value: 'toy', count: 2, label: 'Add 2 toys' },
@@ -118,6 +123,7 @@ export const THEMES = [
     name: 'Garden Retreat',
     emoji: '🌿',
     description: 'Lush, green, a little slice of outside.',
+    room: [500, 400, 260],
     objectives: [
       { type: 'tag', value: 'garden', count: 3, label: 'Place 3 garden-themed items' },
       { type: 'category', value: 'plant', count: 2, label: 'Add 2 plants' },
@@ -127,29 +133,29 @@ export const THEMES = [
   },
 ];
 
-// Wall & floor styles are free and cosmetic — swap them any time
+// Wall & floor colours are free and cosmetic — swap them any time
 export const WALLS = [
-  { id: 'cream', name: 'Cream', css: '#f4ece0' },
-  { id: 'blush', name: 'Blush', css: '#ffe4ec' },
-  { id: 'sky', name: 'Sky Blue', css: '#dbeafe' },
-  { id: 'sage', name: 'Sage', css: '#dcefdc' },
-  { id: 'lavender', name: 'Lavender', css: '#ebe4ff' },
-  { id: 'stripes', name: 'Stripes', css: 'repeating-linear-gradient(90deg, #fff5f7 0 24px, #ffd6e0 24px 48px)' },
-  { id: 'polka', name: 'Polka Dots', css: 'radial-gradient(#c4b5fd 3px, transparent 3px) 0 0 / 28px 28px, #f5f0ff' },
-  { id: 'brick', name: 'Brick', css: 'repeating-linear-gradient(0deg, #c9826a 0 14px, #b86f57 14px 16px), repeating-linear-gradient(90deg, transparent 0 30px, #b86f57 30px 32px)' },
-  { id: 'wood-panel', name: 'Wood Panel', css: 'repeating-linear-gradient(90deg, #d9b48a 0 18px, #c9a276 18px 20px)' },
-  { id: 'night', name: 'Night', css: 'radial-gradient(#fff 1px, transparent 1px) 0 0 / 22px 22px, #2b2d5c' },
+  { id: 'cream', name: 'Cream', color: '#f4ece0' },
+  { id: 'blush', name: 'Blush', color: '#ffe4ec' },
+  { id: 'sky', name: 'Sky Blue', color: '#dbeafe' },
+  { id: 'sage', name: 'Sage', color: '#dcefdc' },
+  { id: 'lavender', name: 'Lavender', color: '#ebe4ff' },
+  { id: 'peach', name: 'Peach', color: '#ffe0c7' },
+  { id: 'brick', name: 'Brick', color: '#c9826a' },
+  { id: 'wood', name: 'Wood Panel', color: '#d9b48a' },
+  { id: 'teal', name: 'Teal', color: '#9fd8d5' },
+  { id: 'night', name: 'Night', color: '#3b3d73' },
 ];
 
 export const FLOORS = [
-  { id: 'oak', name: 'Oak', css: 'repeating-linear-gradient(90deg, #e8d5b7 0 40px, #dcc4a0 40px 42px)' },
-  { id: 'dark-wood', name: 'Dark Wood', css: 'repeating-linear-gradient(90deg, #a8764e 0 40px, #94643f 40px 42px)' },
-  { id: 'tile', name: 'Tile', css: 'repeating-conic-gradient(#f3f4f6 0 25%, #e5e7eb 0 50%) 0 0 / 36px 36px' },
-  { id: 'carpet', name: 'Carpet', css: '#c7b5e8' },
-  { id: 'sand', name: 'Sand', css: 'radial-gradient(#f2dfb4 1px, transparent 1px) 0 0 / 10px 10px, #f7e7c2' },
-  { id: 'grass', name: 'Grass', css: 'repeating-linear-gradient(45deg, #9fd39f 0 8px, #8bc98b 8px 16px)' },
-  { id: 'checker', name: 'Checker', css: 'repeating-conic-gradient(#fde68a 0 25%, #fbbf24 0 50%) 0 0 / 40px 40px' },
-  { id: 'stone', name: 'Stone', css: 'repeating-conic-gradient(#d1d5db 0 25%, #9ca3af 0 50%) 0 0 / 48px 48px' },
+  { id: 'oak', name: 'Oak', color: '#e8d5b7' },
+  { id: 'dark-wood', name: 'Dark Wood', color: '#a8764e' },
+  { id: 'tile', name: 'Tile', color: '#e5e7eb' },
+  { id: 'carpet', name: 'Carpet', color: '#c7b5e8' },
+  { id: 'sand', name: 'Sand', color: '#f7e7c2' },
+  { id: 'grass', name: 'Grass', color: '#9fd39f' },
+  { id: 'checker', name: 'Sunny', color: '#fde68a' },
+  { id: 'stone', name: 'Stone', color: '#b8bcc4' },
 ];
 
 export function getItem(id) {
@@ -160,5 +166,9 @@ export function getTheme(id) {
   return THEMES.find(t => t.id === id) || null;
 }
 
+export const STARTING_COINS = 1000;
+export const DAILY_ALLOWANCE = 1000;
+export const TOPUP_AMOUNT = 1000;
+
 // Bonus coins awarded next round, keyed by star rating (0-5)
-export const STAR_BONUS = { 0: 0, 1: 8, 2: 15, 3: 25, 4: 40, 5: 60 };
+export const STAR_BONUS = { 0: 0, 1: 80, 2: 150, 3: 250, 4: 400, 5: 600 };

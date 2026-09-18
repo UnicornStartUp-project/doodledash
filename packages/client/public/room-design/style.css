@@ -225,23 +225,22 @@
 .rd-tray-item {
   position: relative;
   flex: 0 0 auto;
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: 28px;
   background: #faf5ff;
   border-radius: 12px;
   cursor: grab;
   touch-action: none;
-  margin: 6px 4px 0 0;
 }
 
 .rd-tray-sell {
   position: absolute;
-  top: -7px;
-  right: -7px;
+  top: 2px;
+  right: 2px;
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -254,6 +253,7 @@
   cursor: pointer;
   padding: 0;
   touch-action: manipulation;
+  z-index: 1;
 }
 
 /* ─── Shop ──────────────────────────────── */

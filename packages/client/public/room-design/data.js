@@ -127,6 +127,31 @@ export const THEMES = [
   },
 ];
 
+// Wall & floor styles are free and cosmetic — swap them any time
+export const WALLS = [
+  { id: 'cream', name: 'Cream', css: '#f4ece0' },
+  { id: 'blush', name: 'Blush', css: '#ffe4ec' },
+  { id: 'sky', name: 'Sky Blue', css: '#dbeafe' },
+  { id: 'sage', name: 'Sage', css: '#dcefdc' },
+  { id: 'lavender', name: 'Lavender', css: '#ebe4ff' },
+  { id: 'stripes', name: 'Stripes', css: 'repeating-linear-gradient(90deg, #fff5f7 0 24px, #ffd6e0 24px 48px)' },
+  { id: 'polka', name: 'Polka Dots', css: 'radial-gradient(#c4b5fd 3px, transparent 3px) 0 0 / 28px 28px, #f5f0ff' },
+  { id: 'brick', name: 'Brick', css: 'repeating-linear-gradient(0deg, #c9826a 0 14px, #b86f57 14px 16px), repeating-linear-gradient(90deg, transparent 0 30px, #b86f57 30px 32px)' },
+  { id: 'wood-panel', name: 'Wood Panel', css: 'repeating-linear-gradient(90deg, #d9b48a 0 18px, #c9a276 18px 20px)' },
+  { id: 'night', name: 'Night', css: 'radial-gradient(#fff 1px, transparent 1px) 0 0 / 22px 22px, #2b2d5c' },
+];
+
+export const FLOORS = [
+  { id: 'oak', name: 'Oak', css: 'repeating-linear-gradient(90deg, #e8d5b7 0 40px, #dcc4a0 40px 42px)' },
+  { id: 'dark-wood', name: 'Dark Wood', css: 'repeating-linear-gradient(90deg, #a8764e 0 40px, #94643f 40px 42px)' },
+  { id: 'tile', name: 'Tile', css: 'repeating-conic-gradient(#f3f4f6 0 25%, #e5e7eb 0 50%) 0 0 / 36px 36px' },
+  { id: 'carpet', name: 'Carpet', css: '#c7b5e8' },
+  { id: 'sand', name: 'Sand', css: 'radial-gradient(#f2dfb4 1px, transparent 1px) 0 0 / 10px 10px, #f7e7c2' },
+  { id: 'grass', name: 'Grass', css: 'repeating-linear-gradient(45deg, #9fd39f 0 8px, #8bc98b 8px 16px)' },
+  { id: 'checker', name: 'Checker', css: 'repeating-conic-gradient(#fde68a 0 25%, #fbbf24 0 50%) 0 0 / 40px 40px' },
+  { id: 'stone', name: 'Stone', css: 'repeating-conic-gradient(#d1d5db 0 25%, #9ca3af 0 50%) 0 0 / 48px 48px' },
+];
+
 export function getItem(id) {
   return ITEMS.find(i => i.id === id) || null;
 }

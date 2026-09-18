@@ -2,7 +2,7 @@
 // Standalone single-player page: pick a theme, shop with your coins,
 // decorate a room, get scored against the theme's checklist, earn bonus coins.
 
-import { ITEMS, THEMES, CATEGORIES, TIERS, getItem, getTheme, STAR_BONUS } from './data.js';
+import { ITEMS, THEMES, CATEGORIES, TIERS, WALLS, FLOORS, getItem, getTheme, STAR_BONUS } from './data.js';
 import { loadState, saveState, recordRound } from './storage.js';
 
 const screens = {
@@ -71,7 +71,7 @@ function showThemes() {
 function startRound(themeId) {
   const theme = getTheme(themeId);
   if (!theme) return;
-  round = { theme, owned: [], placed: [] };
+  round = { theme, owned: [], placed: [], wallId: WALLS[0].id, floorId: FLOORS[0].id };
   selectedInstanceId = null;
   activeShopCategory = Object.keys(CATEGORIES)[0];
   renderDecorate();
@@ -91,7 +91,24 @@ function renderDecorate() {
 
       <div class="rd-objectives" id="rd-objectives"></div>
 
-      <div class="rd-room" id="rd-room"></div>
+      <div class="rd-surface-row">
+        <span class="rd-surface-label">🧱 Walls</span>
+        <div class="rd-swatches" id="rd-walls">
+          ${WALLS.map(w => `<button class="rd-swatch" data-wall="${w.id}" title="${w.name}" style="background:${w.css}"></button>`).join('')}
+        </div>
+      </div>
+      <div class="rd-surface-row">
+        <span class="rd-surface-label">🪵 Floor</span>
+        <div class="rd-swatches" id="rd-floors">
+          ${FLOORS.map(f => `<button class="rd-swatch" data-floor="${f.id}" title="${f.name}" style="background:${f.css}"></button>`).join('')}
+        </div>
+      </div>
+
+      <div class="rd-room" id="rd-room">
+        <div class="rd-wall" id="rd-wall"></div>
+        <div class="rd-floor" id="rd-floor"></div>
+        <div class="rd-items" id="rd-items"></div>
+      </div>
 
       <div class="rd-tray" id="rd-tray"></div>
 
@@ -133,12 +150,20 @@ function renderDecorate() {
   document.getElementById('btn-cancel-round').addEventListener('click', cancelRound);
 
   document.getElementById('rd-room').addEventListener('pointerdown', (e) => {
-    if (e.target.id === 'rd-room') {
+    if (['rd-room', 'rd-wall', 'rd-floor', 'rd-items'].includes(e.target.id)) {
       selectedInstanceId = null;
       renderRoom();
     }
   });
 
+  el.querySelectorAll('[data-wall]').forEach(btn => {
+    btn.addEventListener('click', () => { round.wallId = btn.dataset.wall; renderSurfaces(); });
+  });
+  el.querySelectorAll('[data-floor]').forEach(btn => {
+    btn.addEventListener('click', () => { round.floorId = btn.dataset.floor; renderSurfaces(); });
+  });
+
+  renderSurfaces();
   renderObjectives();
   renderShopGrid();
   renderTray();
@@ -253,8 +278,17 @@ function cancelRound() {
 }
 
 // ─── Room rendering ───────────────────────────
+function renderSurfaces() {
+  const wall = WALLS.find(w => w.id === round.wallId) || WALLS[0];
+  const floor = FLOORS.find(f => f.id === round.floorId) || FLOORS[0];
+  document.getElementById('rd-wall').style.background = wall.css;
+  document.getElementById('rd-floor').style.background = floor.css;
+  document.querySelectorAll('[data-wall]').forEach(b => b.classList.toggle('selected', b.dataset.wall === wall.id));
+  document.querySelectorAll('[data-floor]').forEach(b => b.classList.toggle('selected', b.dataset.floor === floor.id));
+}
+
 function renderRoom() {
-  const room = document.getElementById('rd-room');
+  const room = document.getElementById('rd-items');
   if (!room) return;
   room.innerHTML = '';
 
@@ -382,6 +416,8 @@ function startPlacedDrag(e, instanceId) {
 // ─── Scoring ──────────────────────────────────
 function finishRound() {
   const { theme } = round;
+  if (round.placed.length === 0 && !confirm('Your room is empty! Finish anyway?')) return;
+  if (round.placed.length > 0 && !confirm('Finish decorating and lock in your score?')) return;
   const breakdown = theme.objectives.map(obj => {
     const actual = countMatching(obj);
     const met = actual >= obj.count;

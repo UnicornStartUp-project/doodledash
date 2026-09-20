@@ -44,6 +44,12 @@ export function showLobby(games) {
       </div>
     </div>
 
+    <a href="/room-design/" class="card" style="margin-top:12px;text-decoration:none;color:inherit;display:block;text-align:center">
+      <span style="font-size:28px">🛋️</span>
+      <div style="font-weight:800;margin-top:4px">Room Design</div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:2px">Solo decorating game — no friends needed!</div>
+    </a>
+
     <div id="player-list-card" class="card hidden" style="margin-top:12px">
       <div class="card-title">👥 Players in Room</div>
       <ul id="player-list" class="player-list"></ul>

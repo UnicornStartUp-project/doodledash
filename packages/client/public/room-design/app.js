@@ -1,10 +1,10 @@
 // Room Design — Solo Decorating Game
 // Pick a theme, shop with your coins, place real-size furniture in an
-// isometric room (items can't overlap), get scored against the theme's
-// checklist, earn bonus coins.
+// isometric room (items can't overlap, but can stack on surfaces), get
+// scored against the theme's checklist, earn bonus coins.
 
 import {
-  ITEMS, THEMES, CATEGORIES, TIERS, WALLS, FLOORS,
+  ITEMS, THEMES, CATEGORIES, TIERS, WALLS, FLOORS, ITEM_COLORS,
   getItem, getTheme, STAR_BONUS, DAILY_ALLOWANCE, TOPUP_AMOUNT,
 } from './data.js';
 import { loadState, saveState, recordRound } from './storage.js';
@@ -19,13 +19,22 @@ const screens = {
 let saveData = loadState();
 
 // ─── Round state ─────────────────────────────
-let round = null; // { theme, owned: [{instanceId,itemId}], placed: [{instanceId,itemId,x,y,rot}], wallId, floorId }
+// placed item: { instanceId, itemId, x, y, rot, color, onTop: instanceId|null }
+// owned item:  { instanceId, itemId, color }
+let round = null;
 let view = null;
 let selectedInstanceId = null;
 let activeShopCategory = null;
-let drag = null; // { instanceId, offX, offY, origX, origY, moved, colliding }
+let drag = null; // { instanceId, group: [{instanceId,x,y,onTop}], moved, colliding }
+let colorTarget = null; // instanceId currently shown in the color popover
+let hoverSurfaceId = null; // instanceId of the surface currently highlighted during a drag
 let uidCounter = 0;
 const nextId = () => `i${uidCounter++}`;
+
+// Pinch-to-zoom (touch) — tracked at module scope so it works across both
+// item-dragging and background-panning without the two interfering.
+const pinchPointers = new Map();
+let pinchStart = null;
 
 function switchScreen(name) {
   Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== name));
@@ -105,22 +114,47 @@ function dimsOf(itemId, rot) {
   return rot ? { w: d, d: w, h } : { w, d, h };
 }
 
-function rect3(p) {
-  const item = getItem(p.itemId);
-  const { w, d, h } = dimsOf(p.itemId, p.rot);
-  return { x: p.x, y: p.y, w, d, z: item.elev || 0, h };
+function childrenOf(instanceId) {
+  return round.placed.filter(p => p.onTop === instanceId);
 }
 
-function collidesAt(candidate, excludeId) {
-  return round.placed.some(p => p.instanceId !== excludeId && rectsCollide3D(candidate, rect3(p)));
+function elevationOf(p) {
+  if (!p.onTop) return getItem(p.itemId).elev || 0;
+  const parent = round.placed.find(x => x.instanceId === p.onTop);
+  if (!parent) return getItem(p.itemId).elev || 0;
+  return elevationOf(parent) + dimsOf(parent.itemId, parent.rot).h;
+}
+
+function rect3(p) {
+  const { w, d, h } = dimsOf(p.itemId, p.rot);
+  return { x: p.x, y: p.y, w, d, z: elevationOf(p), h };
+}
+
+function collidesAt(candidate, excludeIds = []) {
+  return round.placed.some(p => !excludeIds.includes(p.instanceId) && rectsCollide3D(candidate, rect3(p)));
 }
 
 function inBounds(r) {
-  const [W, D] = round.theme.room;
-  return r.x >= 0 && r.y >= 0 && r.x + r.w <= W && r.y + r.d <= D;
+  const [W, D, H] = round.theme.room;
+  return r.x >= 0 && r.y >= 0 && r.x + r.w <= W && r.y + r.d <= D && r.z + r.h <= H + 0.01;
 }
 
 const snap = v => Math.round(v / CELL) * CELL;
+
+// Is `candidate` (a floor-relative footprint) fully sitting on top of some
+// eligible surface item? Surfaces themselves and wall items never stack.
+function attachTarget(itemDef, candidate, excludeIds) {
+  if (itemDef.wall || itemDef.surface) return null;
+  return round.placed.find(p => {
+    if (excludeIds.includes(p.instanceId)) return false;
+    const host = getItem(p.itemId);
+    if (!host.surface || p.onTop) return false;
+    const hr = rect3(p);
+    return candidate.x >= hr.x && candidate.y >= hr.y &&
+      candidate.x + candidate.w <= hr.x + hr.w &&
+      candidate.y + candidate.d <= hr.y + hr.d;
+  }) || null;
+}
 
 // Find a free snapped spot near (cx, cy) for an item; wall items stick to the nearest back wall
 function findSpot(itemId, cx, cy) {
@@ -128,7 +162,7 @@ function findSpot(itemId, cx, cy) {
   const [W, D] = round.theme.room;
 
   if (item.wall) {
-    const onXWall = cy <= cx; // closer to the y=0 wall
+    const onXWall = cy <= cx;
     const rot = onXWall ? 0 : 1;
     const { w, d, h } = dimsOf(itemId, rot);
     const along = onXWall ? snap(cx - w / 2) : snap(cy - d / 2);
@@ -164,6 +198,8 @@ function startRound(themeId) {
   round = { theme, owned: [], placed: [], wallId: WALLS[0].id, floorId: FLOORS[0].id };
   selectedInstanceId = null;
   drag = null;
+  colorTarget = null;
+  hoverSurfaceId = null;
   activeShopCategory = Object.keys(CATEGORIES)[0];
   renderDecorate();
   switchScreen('decorate');
@@ -202,11 +238,25 @@ function renderDecorate() {
       <div class="rd-room" id="rd-room">
         <canvas id="rd-canvas"></canvas>
         <div class="rd-item-toolbar hidden" id="rd-item-toolbar">
+          <button data-action="color" title="Change color">🎨</button>
           <button data-action="rotate" title="Rotate item">🔄</button>
           <button data-action="remove" title="Back to tray">🗑️</button>
         </div>
-        <button class="rd-view-rotate" id="btn-view-rotate" title="Rotate view">🔃</button>
+        <div class="rd-view-controls">
+          <button id="btn-zoom-in" title="Zoom in">➕</button>
+          <button id="btn-zoom-out" title="Zoom out">➖</button>
+          <button id="btn-view-rotate" title="Rotate view">🔃</button>
+          <button id="btn-view-reset" title="Reset view">🎯</button>
+        </div>
         <div class="rd-room-info">${(W / 100).toFixed(1)} × ${(D / 100).toFixed(1)} m · ceiling ${(H / 100).toFixed(1)} m · squares are 25 cm</div>
+      </div>
+
+      <div class="rd-color-popover hidden" id="rd-color-popover">
+        <span class="rd-surface-label">🎨 Color</span>
+        <div class="rd-swatches">
+          ${ITEM_COLORS.map(c => `<button class="rd-swatch" data-color="${c}" style="background:${c}"></button>`).join('')}
+        </div>
+        <button id="btn-close-color" class="rd-color-close" title="Close">✕</button>
       </div>
 
       <div class="rd-tray" id="rd-tray"></div>
@@ -224,7 +274,7 @@ function renderDecorate() {
         <button id="btn-reset-room" class="btn btn-secondary">🗑️ Clear Room</button>
         <button id="btn-finish" class="btn btn-primary">✅ Finish</button>
       </div>
-      <p style="font-size:12px;color:var(--text-light);text-align:center">Tap an item in the room to rotate or remove it. Tap ✕ on a tray item to sell it back. ↩️ Back refunds everything.</p>
+      <p style="font-size:12px;color:var(--text-light);text-align:center">Drag a small item onto a table or cabinet to set it on top. Pinch or use ➕➖ to zoom, drag empty floor to pan.</p>
     </div>
   `;
 
@@ -239,9 +289,10 @@ function renderDecorate() {
   el.querySelector('.btn-topup').addEventListener('click', topUp);
 
   document.getElementById('btn-reset-room').addEventListener('click', () => {
-    round.owned.push(...round.placed.map(p => ({ instanceId: p.instanceId, itemId: p.itemId })));
+    round.owned.push(...round.placed.map(p => ({ instanceId: p.instanceId, itemId: p.itemId, color: p.color })));
     round.placed = [];
     selectedInstanceId = null;
+    closeColorPopover();
     renderRoom();
     renderTray();
     renderObjectives();
@@ -261,13 +312,14 @@ function renderDecorate() {
   const canvas = document.getElementById('rd-canvas');
   view = createIsoView(canvas);
   view.setRoom(W, D, H);
-  canvas.addEventListener('pointerdown', onCanvasDown);
+  canvas.addEventListener('pointerdown', onCanvasPointerDown);
+  canvas.addEventListener('wheel', onCanvasWheel, { passive: false });
   window.addEventListener('resize', renderRoom);
 
-  document.getElementById('btn-view-rotate').addEventListener('click', () => {
-    view.rotateView();
-    renderRoom();
-  });
+  document.getElementById('btn-view-rotate').addEventListener('click', () => { view.rotateView(); renderRoom(); });
+  document.getElementById('btn-zoom-in').addEventListener('click', () => { view.zoomBy(1.25); renderRoom(); });
+  document.getElementById('btn-zoom-out').addEventListener('click', () => { view.zoomBy(1 / 1.25); renderRoom(); });
+  document.getElementById('btn-view-reset').addEventListener('click', () => { view.resetView(); renderRoom(); });
 
   const toolbar = document.getElementById('rd-item-toolbar');
   toolbar.addEventListener('pointerdown', e => e.stopPropagation());
@@ -275,6 +327,14 @@ function renderDecorate() {
   toolbar.querySelector('[data-action="remove"]').addEventListener('click', () => {
     if (selectedInstanceId) removePlaced(selectedInstanceId);
   });
+  toolbar.querySelector('[data-action="color"]').addEventListener('click', () => openColorPopover(selectedInstanceId));
+
+  const popover = document.getElementById('rd-color-popover');
+  popover.addEventListener('pointerdown', e => e.stopPropagation());
+  popover.querySelectorAll('[data-color]').forEach(btn => {
+    btn.addEventListener('click', () => { if (colorTarget) applyColor(colorTarget, btn.dataset.color); });
+  });
+  document.getElementById('btn-close-color').addEventListener('click', closeColorPopover);
 
   renderSurfaces();
   renderObjectives();
@@ -323,7 +383,7 @@ function renderShopGrid() {
   el.innerHTML = items.map(item => `
     <div class="rd-shop-item ${saveData.coins < item.price ? 'unaffordable' : ''}" data-item="${item.id}" style="border-color:${TIERS[item.tier].color}66">
       <span class="rd-shop-item-emoji">${item.emoji}</span>
-      <div class="rd-shop-item-name">${item.name}</div>
+      <div class="rd-shop-item-name">${item.name}${item.surface ? ' 🧷' : ''}</div>
       <div class="rd-shop-item-size">${sizeLabel(item)}</div>
       <div class="rd-shop-item-price">🪙${item.price}</div>
     </div>
@@ -341,7 +401,7 @@ function buyItem(itemId) {
   }
   saveData.coins -= item.price;
   saveState(saveData);
-  round.owned.push({ instanceId: nextId(), itemId });
+  round.owned.push({ instanceId: nextId(), itemId, color: item.color });
   updateCoinDisplays();
   renderTray();
 }
@@ -357,24 +417,27 @@ function renderTray() {
     const item = getItem(o.itemId);
     return `
       <div class="rd-tray-item" data-instance="${o.instanceId}" title="${item.name} · ${sizeLabel(item)}">
-        ${item.emoji}
+        <span style="color:${o.color}">${item.emoji}</span>
+        <button class="rd-tray-color" data-instance="${o.instanceId}" title="Change color" style="background:${o.color}"></button>
         <button class="rd-tray-sell" data-instance="${o.instanceId}" title="Sell back for 🪙${item.price}">✕</button>
       </div>`;
   }).join('');
 
   el.querySelectorAll('.rd-tray-item').forEach(node => {
     node.addEventListener('pointerdown', (e) => {
-      if (e.target.classList.contains('rd-tray-sell')) return;
+      if (e.target.closest('.rd-tray-sell') || e.target.closest('.rd-tray-color')) return;
       startTrayDrag(e, node.dataset.instance);
     });
   });
 
   el.querySelectorAll('.rd-tray-sell').forEach(btn => {
     btn.addEventListener('pointerdown', (e) => e.stopPropagation());
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      sellItem(btn.dataset.instance);
-    });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); sellItem(btn.dataset.instance); });
+  });
+
+  el.querySelectorAll('.rd-tray-color').forEach(btn => {
+    btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openColorPopover(btn.dataset.instance); });
   });
 }
 
@@ -401,21 +464,46 @@ function cancelRound() {
   showThemes();
 }
 
+// ─── Color ─────────────────────────────────────
+function openColorPopover(instanceId) {
+  if (!instanceId) return;
+  colorTarget = instanceId;
+  const popover = document.getElementById('rd-color-popover');
+  popover.classList.remove('hidden');
+}
+
+function closeColorPopover() {
+  colorTarget = null;
+  document.getElementById('rd-color-popover')?.classList.add('hidden');
+}
+
+function applyColor(instanceId, hex) {
+  const o = round.owned.find(x => x.instanceId === instanceId);
+  if (o) o.color = hex;
+  const p = round.placed.find(x => x.instanceId === instanceId);
+  if (p) p.color = hex;
+  closeColorPopover();
+  renderTray();
+  renderRoom();
+}
+
 // ─── Room rendering ───────────────────────────
 function renderRoom() {
   if (!view || !round) return;
   view.setItems(round.placed.map(p => {
     const item = getItem(p.itemId);
     const { w, d, h } = dimsOf(p.itemId, p.rot);
-    const dragging = drag && drag.instanceId === p.instanceId;
+    const dragging = drag && drag.group.some(g => g.instanceId === p.instanceId);
     return {
       instanceId: p.instanceId,
       x: p.x, y: p.y, w, d, h,
-      elev: item.elev || 0,
-      color: CATEGORIES[item.category].color,
+      elev: elevationOf(p),
+      color: p.color || item.color,
       emoji: item.emoji,
+      shape: item.shape,
       dragging,
       colliding: dragging && drag.colliding,
+      surfaceTarget: p.instanceId === hoverSurfaceId,
     };
   }));
   view.setSelected(selectedInstanceId);
@@ -442,8 +530,22 @@ function removePlaced(instanceId) {
   const idx = round.placed.findIndex(p => p.instanceId === instanceId);
   if (idx === -1) return;
   const [p] = round.placed.splice(idx, 1);
-  round.owned.push({ instanceId: p.instanceId, itemId: p.itemId });
-  if (selectedInstanceId === instanceId) selectedInstanceId = null;
+
+  // Anything resting on top of this needs somewhere to go
+  const kids = childrenOf(instanceId);
+  for (const kid of kids) {
+    round.placed = round.placed.filter(x => x.instanceId !== kid.instanceId);
+    const spot = findSpot(kid.itemId, kid.x, kid.y);
+    if (spot) {
+      round.placed.push({ ...kid, x: spot.x, y: spot.y, rot: spot.rot, onTop: null });
+    } else {
+      round.owned.push({ instanceId: kid.instanceId, itemId: kid.itemId, color: kid.color });
+      showToast(`${getItem(kid.itemId).name} didn't fit on the floor — sent back to your tray`);
+    }
+  }
+
+  round.owned.push({ instanceId: p.instanceId, itemId: p.itemId, color: p.color });
+  if (selectedInstanceId === instanceId) { selectedInstanceId = null; closeColorPopover(); }
   renderRoom();
   renderTray();
   renderObjectives();
@@ -452,43 +554,51 @@ function removePlaced(instanceId) {
 function rotateSelected() {
   const p = round.placed.find(x => x.instanceId === selectedInstanceId);
   if (!p || getItem(p.itemId).wall) return;
+  if (childrenOf(p.instanceId).length > 0) {
+    showToast('Remove what\'s on top first, then rotate', true);
+    return;
+  }
   const candidate = { ...rect3({ ...p, rot: p.rot ? 0 : 1 }) };
   if (!inBounds(candidate)) { showToast("Can't rotate — it would poke through the wall!", true); return; }
-  if (collidesAt(candidate, p.instanceId)) { showToast("Can't rotate — it would bump into something!", true); return; }
+  if (collidesAt(candidate, [p.instanceId])) { showToast("Can't rotate — it would bump into something!", true); return; }
   p.rot = p.rot ? 0 : 1;
   renderRoom();
 }
 
-// ─── Drag: reposition inside the room ────────
-function onCanvasDown(e) {
+// ─── Drag: reposition inside the room (or pan the camera) ────────
+function onCanvasPointerDown(e) {
+  pinchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinchPointers.size === 2) {
+    const pts = [...pinchPointers.values()];
+    pinchStart = { dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), zoom: view.getZoom() };
+    return;
+  }
+  if (pinchPointers.size > 2) return;
+
   e.preventDefault();
   const id = view.hitTest(e.clientX, e.clientY);
   if (!id) {
-    selectedInstanceId = null;
-    renderRoom();
+    startPan(e);
     return;
   }
-  selectedInstanceId = id;
-  const p = round.placed.find(x => x.instanceId === id);
-  const pt = view.screenToFloor(e.clientX, e.clientY);
-  drag = { instanceId: id, offX: pt.x - p.x, offY: pt.y - p.y, origX: p.x, origY: p.y, moved: false, colliding: false };
+  startItemDrag(e, id);
+}
+
+function onCanvasWheel(e) {
+  e.preventDefault();
+  view.zoomBy(e.deltaY < 0 ? 1.1 : 1 / 1.1);
   renderRoom();
+}
+
+function startPan(e) {
+  let last = { x: e.clientX, y: e.clientY };
+  let moved = false;
 
   const move = (ev) => {
-    const item = getItem(p.itemId);
-    const r = rect3(p);
-    const [W, D] = round.theme.room;
-    const fp = view.screenToFloor(ev.clientX, ev.clientY);
-    let nx = snap(fp.x - drag.offX);
-    let ny = snap(fp.y - drag.offY);
-    if (item.wall) {
-      if (p.rot === 0) ny = 0; else nx = 0;
-    }
-    nx = Math.min(W - r.w, Math.max(0, nx));
-    ny = Math.min(D - r.d, Math.max(0, ny));
-    if (nx !== p.x || ny !== p.y) drag.moved = true;
-    p.x = nx; p.y = ny;
-    drag.colliding = collidesAt(rect3(p), p.instanceId);
+    if (pinchPointers.size >= 2) return;
+    view.panBy(ev.clientX - last.x, ev.clientY - last.y);
+    if (Math.abs(ev.clientX - last.x) > 3 || Math.abs(ev.clientY - last.y) > 3) moved = true;
+    last = { x: ev.clientX, y: ev.clientY };
     renderRoom();
   };
 
@@ -496,8 +606,74 @@ function onCanvasDown(e) {
     document.removeEventListener('pointermove', move);
     document.removeEventListener('pointerup', up);
     document.removeEventListener('pointercancel', up);
+    if (!moved && selectedInstanceId) {
+      selectedInstanceId = null;
+      closeColorPopover();
+      renderRoom();
+    }
+  };
+
+  document.addEventListener('pointermove', move);
+  document.addEventListener('pointerup', up);
+  document.addEventListener('pointercancel', up);
+}
+
+function startItemDrag(e, id) {
+  selectedInstanceId = id;
+  const p = round.placed.find(x => x.instanceId === id);
+  const itemDef = getItem(p.itemId);
+  const kids = itemDef.surface ? childrenOf(id) : [];
+  const group = [p, ...kids];
+  const origin = group.map(g => ({ instanceId: g.instanceId, x: g.x, y: g.y, onTop: g.onTop }));
+
+  const pt = view.screenToFloor(e.clientX, e.clientY);
+  drag = { instanceId: id, group: origin, offX: pt.x - p.x, offY: pt.y - p.y, moved: false, colliding: false };
+  renderRoom();
+
+  const move = (ev) => {
+    if (pinchPointers.size >= 2) return;
+    const { w, d, h } = dimsOf(p.itemId, p.rot);
+    const [W, D] = round.theme.room;
+    const fp = view.screenToFloor(ev.clientX, ev.clientY);
+    let nx = snap(fp.x - drag.offX);
+    let ny = snap(fp.y - drag.offY);
+    if (itemDef.wall) {
+      if (p.rot === 0) ny = 0; else nx = 0;
+    }
+    nx = Math.min(W - w, Math.max(0, nx));
+    ny = Math.min(D - d, Math.max(0, ny));
+    if (nx !== p.x || ny !== p.y) drag.moved = true;
+
+    const dx = nx - origin[0].x, dy = ny - origin[0].y;
+    p.x = nx; p.y = ny;
+    for (let i = 1; i < group.length; i++) {
+      group[i].x = origin[i].x + dx;
+      group[i].y = origin[i].y + dy;
+    }
+
+    const excludeIds = group.map(g => g.instanceId);
+    let target = null;
+    if (!itemDef.wall) {
+      target = attachTarget(itemDef, { x: p.x, y: p.y, w, d }, excludeIds);
+      p.onTop = target ? target.instanceId : null;
+    }
+    hoverSurfaceId = target ? target.instanceId : null;
+
+    const fullRect = { x: p.x, y: p.y, w, d, z: elevationOf(p), h };
+    drag.colliding = !inBounds(fullRect) || collidesAt(fullRect, excludeIds);
+    renderRoom();
+  };
+
+  const up = () => {
+    document.removeEventListener('pointermove', move);
+    document.removeEventListener('pointerup', up);
+    document.removeEventListener('pointercancel', up);
+    hoverSurfaceId = null;
     if (drag.colliding) {
-      p.x = drag.origX; p.y = drag.origY;
+      for (const g of group) {
+        const orig = origin.find(o => o.instanceId === g.instanceId);
+        g.x = orig.x; g.y = orig.y; g.onTop = orig.onTop;
+      }
       showToast("Doesn't fit there — something's in the way!", true);
     }
     drag = null;
@@ -519,12 +695,26 @@ function startTrayDrag(e, instanceId) {
 
   const ghost = document.createElement('div');
   ghost.className = 'rd-ghost';
+  ghost.style.color = owned.color;
   ghost.textContent = item.emoji;
   document.body.appendChild(ghost);
 
   const move = (ev) => {
     ghost.style.left = `${ev.clientX}px`;
     ghost.style.top = `${ev.clientY}px`;
+    const canvas = document.getElementById('rd-canvas');
+    const rect = canvas.getBoundingClientRect();
+    const over = ev.clientX >= rect.left && ev.clientX <= rect.right && ev.clientY >= rect.top && ev.clientY <= rect.bottom;
+    if (over && !item.wall) {
+      const pt = view.screenToFloor(ev.clientX, ev.clientY);
+      const { w, d } = dimsOf(owned.itemId, 0);
+      const target = attachTarget(item, { x: snap(pt.x - w / 2), y: snap(pt.y - d / 2), w, d }, []);
+      hoverSurfaceId = target ? target.instanceId : null;
+      renderRoom();
+    } else if (hoverSurfaceId) {
+      hoverSurfaceId = null;
+      renderRoom();
+    }
   };
   move(e);
 
@@ -533,6 +723,7 @@ function startTrayDrag(e, instanceId) {
     document.removeEventListener('pointerup', up);
     document.removeEventListener('pointercancel', up);
     ghost.remove();
+    hoverSurfaceId = null;
 
     const canvas = document.getElementById('rd-canvas');
     const rect = canvas.getBoundingClientRect();
@@ -540,13 +731,33 @@ function startTrayDrag(e, instanceId) {
     if (!over) return;
 
     const pt = view.screenToFloor(ev.clientX, ev.clientY);
+
+    if (!item.wall) {
+      const { w, d, h } = dimsOf(owned.itemId, 0);
+      const candidate = { x: snap(pt.x - w / 2), y: snap(pt.y - d / 2), w, d };
+      const target = attachTarget(item, candidate, []);
+      if (target) {
+        const tr = rect3(target);
+        candidate.x = Math.min(Math.max(candidate.x, tr.x), tr.x + tr.w - w);
+        candidate.y = Math.min(Math.max(candidate.y, tr.y), tr.y + tr.d - d);
+        const fullRect = { ...candidate, z: tr.z + tr.h, h };
+        if (!collidesAt(fullRect, [])) {
+          round.owned = round.owned.filter(o => o.instanceId !== instanceId);
+          round.placed.push({ instanceId, itemId: owned.itemId, x: candidate.x, y: candidate.y, rot: 0, color: owned.color, onTop: target.instanceId });
+          selectedInstanceId = instanceId;
+          renderRoom(); renderTray(); renderObjectives();
+          return;
+        }
+      }
+    }
+
     const spot = findSpot(owned.itemId, pt.x, pt.y);
     if (!spot) {
       showToast(`No room for the ${item.name} there — it's ${sizeLabel(item)}`, true);
       return;
     }
     round.owned = round.owned.filter(o => o.instanceId !== instanceId);
-    round.placed.push({ instanceId, itemId: owned.itemId, x: spot.x, y: spot.y, rot: spot.rot });
+    round.placed.push({ instanceId, itemId: owned.itemId, x: spot.x, y: spot.y, rot: spot.rot, color: owned.color, onTop: null });
     selectedInstanceId = instanceId;
     renderRoom();
     renderTray();
@@ -613,6 +824,24 @@ function showScore(theme, breakdown, stars, bonus, refund) {
 
   switchScreen('score');
 }
+
+// ─── Pinch-to-zoom (global, guarded by `view` existing) ───────
+document.addEventListener('pointermove', (e) => {
+  if (!view || !pinchPointers.has(e.pointerId)) return;
+  pinchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinchPointers.size >= 2 && pinchStart) {
+    const pts = [...pinchPointers.values()];
+    const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    view.setZoom(pinchStart.zoom * (d / pinchStart.dist));
+    renderRoom();
+  }
+});
+function endPinchPointer(e) {
+  pinchPointers.delete(e.pointerId);
+  if (pinchPointers.size < 2) pinchStart = null;
+}
+document.addEventListener('pointerup', endPinchPointer);
+document.addEventListener('pointercancel', endPinchPointer);
 
 // ─── Boot ─────────────────────────────────────
 checkDailyAllowance();

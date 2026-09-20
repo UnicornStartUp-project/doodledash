@@ -11,7 +11,14 @@ export const CATEGORIES = {
   tech: { label: 'Tech', emoji: '📺', color: '#8fa3c8' },
   rug: { label: 'Rugs', emoji: '🟫', color: '#d9b8e0' },
   toy: { label: 'Toys', emoji: '🧸', color: '#9ad0f5' },
+  table: { label: 'Tables', emoji: '🍽️', color: '#c9a27e' },
 };
+
+// Swatches offered when recoloring any item (shop, tray, or placed)
+export const ITEM_COLORS = [
+  '#F87171', '#FB923C', '#FBBF24', '#4ADE80', '#34D399', '#22D3EE',
+  '#60A5FA', '#818CF8', '#A78BFA', '#F472B6', '#94A3B8', '#78350F',
+];
 
 export const TIERS = {
   basic: { label: 'Basic', color: '#8FBF8F' },
@@ -19,49 +26,57 @@ export const TIERS = {
   deluxe: { label: 'Deluxe', color: '#FBBF24' },
 };
 
-// wall: true → must hang on a back wall, at `elev` cm above the floor
+// wall: true → must hang on a back wall, at `elev` cm above the floor.
+// surface: true → other items can be placed on top of it.
+// shape → which cosmetic archetype iso.js draws it as (see getParts in iso.js).
+// color → default recolorable tint (every item can be recolored in-game).
 export const ITEMS = [
   // Seating
-  { id: 'sofa', name: 'Sofa', emoji: '🛋️', category: 'seating', tier: 'nice', price: 280, size: [200, 90, 85], tags: ['modern', 'cozy'] },
-  { id: 'armchair', name: 'Armchair', emoji: '🪑', category: 'seating', tier: 'basic', price: 140, size: [85, 85, 90], tags: ['cozy', 'cabin', 'garden'] },
-  { id: 'beanbag', name: 'Bean Bag', emoji: '💺', category: 'seating', tier: 'basic', price: 120, size: [80, 80, 60], tags: ['playroom', 'modern'] },
-  { id: 'bed', name: 'Bed', emoji: '🛏️', category: 'seating', tier: 'deluxe', price: 400, size: [160, 200, 55], tags: ['cozy', 'cabin'] },
-  { id: 'fireplace', name: 'Fireplace', emoji: '🔥', category: 'seating', tier: 'deluxe', price: 380, size: [120, 50, 110], tags: ['cabin', 'cozy'] },
+  { id: 'sofa', name: 'Sofa', emoji: '🛋️', category: 'seating', tier: 'nice', price: 280, size: [200, 90, 85], shape: 'seat', color: '#8AA9C9', tags: ['modern', 'cozy'] },
+  { id: 'armchair', name: 'Armchair', emoji: '🪑', category: 'seating', tier: 'basic', price: 140, size: [85, 85, 90], shape: 'seat', color: '#C97B5A', tags: ['cozy', 'cabin', 'garden'] },
+  { id: 'beanbag', name: 'Bean Bag', emoji: '💺', category: 'seating', tier: 'basic', price: 120, size: [80, 80, 60], shape: 'box', color: '#F4A6B0', tags: ['playroom', 'modern'] },
+  { id: 'bed', name: 'Bed', emoji: '🛏️', category: 'seating', tier: 'deluxe', price: 400, size: [160, 200, 55], shape: 'bed', color: '#EFE3D0', tags: ['cozy', 'cabin'] },
+  { id: 'fireplace', name: 'Fireplace', emoji: '🔥', category: 'seating', tier: 'deluxe', price: 380, size: [120, 50, 110], shape: 'cabinet', color: '#8B5E3C', tags: ['cabin', 'cozy'] },
 
   // Storage
-  { id: 'bookshelf', name: 'Bookshelf', emoji: '📚', category: 'storage', tier: 'basic', price: 160, size: [80, 30, 200], tags: ['modern', 'cabin'] },
-  { id: 'cabinet', name: 'Cabinet', emoji: '🗄️', category: 'storage', tier: 'nice', price: 220, size: [100, 45, 90], tags: ['modern'] },
-  { id: 'basket', name: 'Toy Basket', emoji: '🧺', category: 'storage', tier: 'basic', price: 100, size: [50, 50, 45], tags: ['playroom'] },
+  { id: 'bookshelf', name: 'Bookshelf', emoji: '📚', category: 'storage', tier: 'basic', price: 160, size: [80, 30, 200], shape: 'cabinet', color: '#B08968', tags: ['modern', 'cabin'] },
+  { id: 'cabinet', name: 'Cabinet', emoji: '🗄️', category: 'storage', tier: 'nice', price: 220, size: [100, 45, 90], shape: 'cabinet', color: '#D9C2A6', surface: true, tags: ['modern'] },
+  { id: 'basket', name: 'Toy Basket', emoji: '🧺', category: 'storage', tier: 'basic', price: 100, size: [50, 50, 45], shape: 'box', color: '#C9A227', tags: ['playroom'] },
+
+  // Tables (surfaces — other items can be placed on top)
+  { id: 'coffee-table', name: 'Coffee Table', emoji: '🍽️', category: 'table', tier: 'basic', price: 150, size: [110, 55, 45], shape: 'table', color: '#B08968', surface: true, tags: ['modern', 'cozy'] },
+  { id: 'side-table', name: 'Side Table', emoji: '🍽️', category: 'table', tier: 'basic', price: 90, size: [45, 45, 55], shape: 'table', color: '#B08968', surface: true, tags: ['cozy', 'cabin'] },
+  { id: 'dining-table', name: 'Dining Table', emoji: '🍽️', category: 'table', tier: 'nice', price: 260, size: [150, 90, 75], shape: 'table', color: '#A0785A', surface: true, tags: ['modern', 'garden'] },
 
   // Lighting
-  { id: 'lamp', name: 'Floor Lamp', emoji: '💡', category: 'lighting', tier: 'basic', price: 120, size: [30, 30, 160], tags: ['modern', 'cozy'] },
-  { id: 'candle', name: 'Candle', emoji: '🕯️', category: 'lighting', tier: 'basic', price: 60, size: [25, 25, 30], tags: ['cozy', 'cabin', 'garden'] },
-  { id: 'lantern', name: 'Lantern', emoji: '🪔', category: 'lighting', tier: 'nice', price: 180, size: [30, 30, 45], tags: ['cabin', 'beach'] },
+  { id: 'lamp', name: 'Floor Lamp', emoji: '💡', category: 'lighting', tier: 'basic', price: 120, size: [30, 30, 160], shape: 'lamp', color: '#F5D76E', tags: ['modern', 'cozy'] },
+  { id: 'candle', name: 'Candle', emoji: '🕯️', category: 'lighting', tier: 'basic', price: 60, size: [25, 25, 30], shape: 'lamp', color: '#F2E8CF', tags: ['cozy', 'cabin', 'garden'] },
+  { id: 'lantern', name: 'Lantern', emoji: '🪔', category: 'lighting', tier: 'nice', price: 180, size: [30, 30, 45], shape: 'lamp', color: '#6B7A8F', tags: ['cabin', 'beach'] },
 
   // Plants
-  { id: 'potted-plant', name: 'Potted Plant', emoji: '🪴', category: 'plant', tier: 'basic', price: 100, size: [40, 40, 90], tags: ['garden', 'modern', 'beach'] },
-  { id: 'cactus', name: 'Cactus', emoji: '🌵', category: 'plant', tier: 'basic', price: 80, size: [30, 30, 60], tags: ['modern', 'beach'] },
-  { id: 'palm', name: 'Palm Tree', emoji: '🌴', category: 'plant', tier: 'deluxe', price: 320, size: [80, 80, 220], tags: ['beach', 'garden'] },
-  { id: 'flowers', name: 'Flowers', emoji: '🌸', category: 'plant', tier: 'basic', price: 70, size: [30, 30, 45], tags: ['garden', 'cozy'] },
+  { id: 'potted-plant', name: 'Potted Plant', emoji: '🪴', category: 'plant', tier: 'basic', price: 100, size: [40, 40, 90], shape: 'plant', color: '#4C9A5B', tags: ['garden', 'modern', 'beach'] },
+  { id: 'cactus', name: 'Cactus', emoji: '🌵', category: 'plant', tier: 'basic', price: 80, size: [30, 30, 60], shape: 'plant', color: '#5FAE6E', tags: ['modern', 'beach'] },
+  { id: 'palm', name: 'Palm Tree', emoji: '🌴', category: 'plant', tier: 'deluxe', price: 320, size: [80, 80, 220], shape: 'plant', color: '#3F8F52', tags: ['beach', 'garden'] },
+  { id: 'flowers', name: 'Flowers', emoji: '🌸', category: 'plant', tier: 'basic', price: 70, size: [30, 30, 45], shape: 'plant', color: '#E288B0', tags: ['garden', 'cozy'] },
 
   // Wall Art (hangs on a wall)
-  { id: 'art', name: 'Framed Art', emoji: '🖼️', category: 'wallArt', tier: 'nice', price: 200, size: [70, 5, 50], wall: true, elev: 140, tags: ['modern', 'cozy'] },
-  { id: 'mirror', name: 'Mirror', emoji: '🪞', category: 'wallArt', tier: 'nice', price: 180, size: [50, 5, 120], wall: true, elev: 60, tags: ['modern'] },
-  { id: 'banner', name: 'Beach Banner', emoji: '🎏', category: 'wallArt', tier: 'basic', price: 90, size: [120, 5, 30], wall: true, elev: 190, tags: ['beach', 'playroom'] },
+  { id: 'art', name: 'Framed Art', emoji: '🖼️', category: 'wallArt', tier: 'nice', price: 200, size: [70, 5, 50], shape: 'flat', color: '#D9A441', wall: true, elev: 140, tags: ['modern', 'cozy'] },
+  { id: 'mirror', name: 'Mirror', emoji: '🪞', category: 'wallArt', tier: 'nice', price: 180, size: [50, 5, 120], shape: 'flat', color: '#B9C6D1', wall: true, elev: 60, tags: ['modern'] },
+  { id: 'banner', name: 'Beach Banner', emoji: '🎏', category: 'wallArt', tier: 'basic', price: 90, size: [120, 5, 30], shape: 'flat', color: '#5EC8D8', wall: true, elev: 190, tags: ['beach', 'playroom'] },
 
   // Tech
-  { id: 'tv', name: 'TV', emoji: '📺', category: 'tech', tier: 'deluxe', price: 350, size: [120, 30, 75], tags: ['modern'] },
+  { id: 'tv', name: 'TV', emoji: '📺', category: 'tech', tier: 'deluxe', price: 350, size: [120, 30, 75], shape: 'tv', color: '#2B2B33', tags: ['modern'] },
 
   // Rugs (flat)
-  { id: 'shag-rug', name: 'Shag Rug', emoji: '🟫', category: 'rug', tier: 'basic', price: 100, size: [160, 120, 3], tags: ['cozy', 'cabin'] },
-  { id: 'beach-mat', name: 'Beach Mat', emoji: '🟨', category: 'rug', tier: 'basic', price: 80, size: [180, 90, 2], tags: ['beach'] },
-  { id: 'round-rug', name: 'Round Rug', emoji: '🟪', category: 'rug', tier: 'nice', price: 150, size: [140, 140, 3], tags: ['modern'] },
+  { id: 'shag-rug', name: 'Shag Rug', emoji: '🟫', category: 'rug', tier: 'basic', price: 100, size: [160, 120, 3], shape: 'flat', color: '#C97B5A', tags: ['cozy', 'cabin'] },
+  { id: 'beach-mat', name: 'Beach Mat', emoji: '🟨', category: 'rug', tier: 'basic', price: 80, size: [180, 90, 2], shape: 'flat', color: '#F2D06B', tags: ['beach'] },
+  { id: 'round-rug', name: 'Round Rug', emoji: '🟪', category: 'rug', tier: 'nice', price: 150, size: [140, 140, 3], shape: 'flat', color: '#9B7FC7', tags: ['modern'] },
 
   // Toys
-  { id: 'teddy', name: 'Teddy Bear', emoji: '🧸', category: 'toy', tier: 'basic', price: 90, size: [35, 30, 50], tags: ['playroom', 'cozy'] },
-  { id: 'train', name: 'Toy Train', emoji: '🚂', category: 'toy', tier: 'nice', price: 170, size: [90, 60, 20], tags: ['playroom'] },
-  { id: 'puzzle', name: 'Puzzle', emoji: '🧩', category: 'toy', tier: 'basic', price: 60, size: [50, 40, 3], tags: ['playroom'] },
-  { id: 'kite', name: 'Kite', emoji: '🪁', category: 'toy', tier: 'basic', price: 90, size: [60, 10, 80], tags: ['playroom', 'beach'] },
+  { id: 'teddy', name: 'Teddy Bear', emoji: '🧸', category: 'toy', tier: 'basic', price: 90, size: [35, 30, 50], shape: 'box', color: '#C9975A', tags: ['playroom', 'cozy'] },
+  { id: 'train', name: 'Toy Train', emoji: '🚂', category: 'toy', tier: 'nice', price: 170, size: [90, 60, 20], shape: 'train', color: '#D0453C', tags: ['playroom'] },
+  { id: 'puzzle', name: 'Puzzle', emoji: '🧩', category: 'toy', tier: 'basic', price: 60, size: [50, 40, 3], shape: 'flat', color: '#4C9A5B', tags: ['playroom'] },
+  { id: 'kite', name: 'Kite', emoji: '🪁', category: 'toy', tier: 'basic', price: 90, size: [60, 10, 80], shape: 'box', color: '#4FA8D8', tags: ['playroom', 'beach'] },
 ];
 
 // room = real size in cm: [width, depth, wall height]

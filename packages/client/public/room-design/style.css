@@ -118,19 +118,25 @@
   touch-action: none;
 }
 
-.rd-view-rotate {
+.rd-view-controls {
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 40px;
-  height: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+}
+
+.rd-view-controls button {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: none;
   background: white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  font-size: 20px;
+  font-size: 16px;
   cursor: pointer;
-  z-index: 10;
 }
 
 .rd-room-info {
@@ -271,6 +277,48 @@
   padding: 0;
   touch-action: manipulation;
   z-index: 1;
+}
+
+.rd-tray-color {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px #d8c5d0;
+  cursor: pointer;
+  padding: 0;
+  touch-action: manipulation;
+  z-index: 1;
+}
+
+/* ─── Color popover ─────────────────────── */
+.rd-color-popover {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  box-shadow: 0 2px 12px var(--shadow);
+}
+
+.rd-color-popover.hidden {
+  display: none;
+}
+
+.rd-color-close {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: #f5f0ff;
+  color: var(--text-light);
+  font-weight: 800;
+  cursor: pointer;
 }
 
 /* ─── Shop ──────────────────────────────── */

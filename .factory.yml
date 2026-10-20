@@ -1,0 +1,9 @@
+# This repo already runs dev → main → prod (deploy.yml deploys prod).
+profile: webapp
+target_branch: dev
+checks:
+  - npm ci
+  - node -e "require('./packages/shared/index.js'); require('./packages/games/draw-it/index.js')"
+release:
+  stg_branch: main
+  prd_branch: prod
